@@ -19,8 +19,9 @@ def main():
 
 
     df_merged = pd.merge(ocean_temp_df, co2_emissions_df, on='Year', how='inner') 
-    correlation, _ = pearsonr(df_merged['Year'], df_merged['Anomaly_Temp_K'])
+    correlation, pValue = pearsonr(df_merged['Year'], df_merged['Anomaly_Temp_K'])
     print(correlation)
+    print(pValue)
     return 0
 
 if __name__ == "__main__":
