@@ -1,12 +1,9 @@
-from matplotlib import pyplot as plt
 import pandas as pd
-from CleanData import clean_temp, add_date
-from PlotData import *
+from HelperFunctions import *
 from scipy.stats.mstats import pearsonr
 
 def main():
-    """ Main program """
-    
+    #Getting the ocean data and cleaning it.
     col_names = [
         "Year", "Month", "Anomaly_Temp_K"
     ]
@@ -14,13 +11,40 @@ def main():
     ocean_temp_df = pd.read_csv("data/Ocean/aravg.mon.ocean.90S.90N.v6.0.0.202502.asc.txt",  delimiter="\s+", header=None, names = col_names, usecols=[0, 1, 2]) 
     clean_temp(ocean_temp_df)
     add_date(ocean_temp_df)
+
+    #Printing out the shape
     print("Ocean Temperature data shape: ")
     print(ocean_temp_df.shape)
-    #Same shape, meaning there is no outliers nor NaN values. Additionally cleaning added a new column combing Year and Month called "Date"
 
-    # CO2 Emissions Comparison
+    #Graph of global ocean temp over time, one without line of best fit and the other with. 
     plot_data(ocean_temp_df, "Date", "Anomaly_Temp_K", "Time", "Temperature Anomaly (K)", "Date vs Ocean Temperature")
+    plot_data_with_bestFitLine(ocean_temp_df, "Date", "Anomaly_Temp_K", "Time", "Temperature Anomaly (K)", "Date vs Ocean Temperature")
 
+    #Save the cleaned df back to csv
+    ocean_temp_df.to_csv('outputData/cleaned_global_ocean_temp', index=False)
+
+    #Analyze each area by splitting them into different latituides
+    ocean_temp_00N_30N = pd.read_csv("data/Ocean/aravg.mon.ocean.00N.30N.v6.0.0.202502.asc.txt", delimiter="\s+", header=None, names=col_names, usecols=[0, 1, 2])
+    ocean_temp_30N_60N = pd.read_csv("data/Ocean/aravg.mon.ocean.30N.60N.v6.0.0.202502.asc.txt", delimiter="\s+", header=None, names=col_names, usecols=[0, 1, 2])
+    ocean_temp_60N_90N = pd.read_csv("data/Ocean/aravg.mon.ocean.60N.90N.v6.0.0.202502.asc.txt", delimiter="\s+", header=None, names=col_names, usecols=[0, 1, 2])
+    ocean_temp_30S_00N = pd.read_csv("data/Ocean/aravg.mon.ocean.30S.00N.v6.0.0.202502.asc.txt", delimiter="\s+", header=None, names=col_names, usecols=[0, 1, 2])
+    ocean_temp_60S_30S = pd.read_csv("data/Ocean/aravg.mon.ocean.60S.30S.v6.0.0.202502.asc.txt", delimiter="\s+", header=None, names=col_names, usecols=[0, 1, 2])
+    ocean_temp_90S_60S = pd.read_csv("data/Ocean/aravg.mon.ocean.90S.60S.v6.0.0.202502.asc.txt", delimiter="\s+", header=None, names=col_names, usecols=[0, 1, 2])
+
+    data = [
+        {'Lat': 75, 'Avg_Anomaly': avg_years_range(ocean_temp_60N_90N, 2015, 2025)},
+        {'Lat': 45, 'Avg_Anomaly': avg_years_range(ocean_temp_30N_60N, 2015, 2025)},
+        {'Lat': 15, 'Avg_Anomaly': avg_years_range(ocean_temp_00N_30N, 2015, 2025)},
+        {'Lat': -15, 'Avg_Anomaly': avg_years_range(ocean_temp_30S_00N, 2015, 2025)},
+        {'Lat': -45, 'Avg_Anomaly': avg_years_range(ocean_temp_60S_30S, 2015, 2025)},
+        {'Lat': -75, 'Avg_Anomaly': avg_years_range(ocean_temp_90S_60S, 2015, 2025)},
+    ]
+
+    lat_temp_df = pd.DataFrame(data)
+    plot_temp_by_Lat(lat_temp_df)
+
+
+    #Comparing with CO2 Emissions
     co2_emissions_df = pd.read_csv("data/Emissions/cumulative-co-emissions.csv")
     plot_data(co2_emissions_df, "Year", "Cumulative CO₂ emissions", "Time", "Cumulative CO₂ emissions" , "Year vs Cumulative CO₂ emissions")
 
@@ -52,9 +76,6 @@ def main():
 
     df_merged = ocean_temp_df.merge(land_temp_df, on='Year', suffixes=('_ocean', '_land'))
     df_merged = df_merged.drop_duplicates(subset="Year")
-
-    print(df_merged.columns)
-    print(df_merged.shape)
 
     plot_multiple_data(
         df_merged,
